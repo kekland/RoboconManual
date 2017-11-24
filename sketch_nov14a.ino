@@ -1,6 +1,7 @@
 void setup() {
   Serial.begin(9600);
   Serial1.begin(9600);
+  Serial2.begin(9600);
 }
 
 int stoif(String s) {
@@ -40,7 +41,7 @@ struct driver {
         switch(num) {
           case 0: lmSpeed = stoif(cmd); break;
           case 1: rmSpeed = stoif(cmd); break;
-          case 2: lb1 = (cmd == "1"); Serial.print(cmd + ";"); Serial.print(lb1); Serial.print("\n"); break;
+          case 2: lb1 = (cmd == "1"); break;
           case 3: lb2 = (cmd == "1"); break;
           case 4: rb2 = (cmd == "1"); break;
           case 5: rb1 = (cmd == "1"); break;
@@ -53,10 +54,14 @@ struct driver {
       }
     }  
   }
-}
+};
 
 int convertBtToAnalog(int in) {
   in = abs(in);
+
+  if(in >= 80) {
+    in = 100;
+  }
   //in -> 0 - 100
   //out -> 0 - 255
   return (in / 100.0) * 255.0;
@@ -65,11 +70,11 @@ int convertBtToAnalog(int in) {
 //PINS
 int wheelL_1 = 22;
 int wheelL_2 = 23;
-int wheelL_S = 4;
+int wheelL_S = 2;
 
 int wheelR_1 = 24;
 int wheelR_2 = 25;
-int wheelR_S = 5;
+int wheelR_S = 3;
 
 int lift_1 = 26;
 int lift_2 = 27;
@@ -79,20 +84,29 @@ int claw_2 = 29;
 
 int projectileClaw_X_1 = 30;
 int projectileClaw_X_2 = 31;
-int projectileClaw_X_S = 6;
+int projectileClaw_X_S = 4;
 
 int projectileClaw_Y_1 = 32;
 int projectileClaw_Y_2 = 33;
-int projectileClaw_Y_S = 7;
+int projectileClaw_Y_S = 5;
 
-int catapult_1 = 32;
+int catapult_mover_1 = 34;
+int catapult_mover_2 = 35;
+
+int catapult_holder_1 = 36;
+int catapult_holder_2 = 37;
+int catapult_holder_speed = 6;
 
 driver d1, d2;
 String cmd_d1, cmd_d2;
 
-void configureMotor(int pin1, int pin2, int pinS, int stick) {
-  analogWrite(pinS, convertBtToAnalog(abs(stick));
-
+void configureMotor(int pin1, int pin2, int pinS, int stick, int desiredSpeed = -1) {
+  if(desiredSpeed == -1) {
+    analogWrite(pinS, convertBtToAnalog(abs(stick)));
+  }
+  else {
+    analogWrite(pinS, desiredSpeed);
+  }
   if(stick > 0) {
     digitalWrite(pin1, HIGH);
     digitalWrite(pin2, LOW);
@@ -103,7 +117,7 @@ void configureMotor(int pin1, int pin2, int pinS, int stick) {
   }
   else {
     digitalWrite(pin1, LOW);
-    digitalWrite(pin2, HIGH);
+    digitalWrite(pin2, LOW);
   }
 }
 
@@ -122,6 +136,19 @@ void configureMotorBoolean(int pin1, int pin2, bool btn1, bool btn2) {
   }
 }
 
+void configureCatapultHolder(bool btn1, bool btn2) {
+  configureMotorBoolean(catapult_holder_1, catapult_holder_2, btn1, btn2);
+  if(btn1) {
+    analogWrite(catapult_holder_speed, 255);
+  }
+  else if(btn2) {
+    analogWrite(catapult_holder_speed, 255);
+  }
+  else {
+    analogWrite(catapult_holder_speed, 0);
+  }
+}
+
 void loop() {
   if(Serial1.available()) {
     char x = Serial1.read();
@@ -129,7 +156,8 @@ void loop() {
     if(x != '#') {
       cmd_d1 += x;
     }
-    else {
+    else {  
+      Serial.println(cmd_d2);
       d1.parseCommand(cmd_d1);
       cmd_d1 = "";
     }
@@ -137,6 +165,7 @@ void loop() {
 
   if(Serial2.available()) {
     char x = Serial2.read();
+    //Serial.print(x);
     if(x != '#') {
       cmd_d2 += x;
     }
@@ -150,8 +179,12 @@ void loop() {
   configureMotor(wheelL_1, wheelL_2, wheelL_S, d1.lmSpeed);
   configureMotor(wheelR_1, wheelR_2, wheelR_S, d1.rmSpeed);
   configureMotorBoolean(lift_1, lift_2, d1.lb1, d1.lb2);
-  configureMotorBoolean(claw_1, claw_2, d1.rb2, d1.rb1);
+  configureMotorBoolean(claw_1, claw_2, d1.rb1, d1.rb2);
 
   configureMotor(projectileClaw_X_1, projectileClaw_X_2, projectileClaw_X_S, d2.lmSpeed);
   configureMotor(projectileClaw_Y_1, projectileClaw_Y_2, projectileClaw_Y_S, d2.rmSpeed);
+
+  configureMotorBoolean(catapult_mover_1, catapult_mover_2, d2.lb1, d2.lb2);
+  configureCatapultHolder(d2.rb1, d2.rb2);
 }
+
