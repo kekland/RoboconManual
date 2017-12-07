@@ -212,13 +212,13 @@ void loop() {
   //Serial.println(d1.leftStick.y);
   double multiplier = 1.0;
   if(d1.precisionEnabled) {
-    multiplier = 0.2;
+    multiplier = 0.6;
   }
   configureMotor(leftWheels_first_2, leftWheels_first_1, leftWheels_first_s, d1.leftStick.y * multiplier);
   configureMotor(leftWheels_second_2, leftWheels_second_1, leftWheels_second_s, d1.leftStick.y * multiplier);
   
-  configureMotor(rightWheels_first_1, rightWheels_first_2, rightWheels_first_s, d1.rightStick.y);
-  configureMotor(rightWheels_second_1, rightWheels_second_2, rightWheels_second_s, d1.rightStick.y);
+  configureMotor(rightWheels_first_1, rightWheels_first_2, rightWheels_first_s, d1.rightStick.y * multiplier);
+  configureMotor(rightWheels_second_1, rightWheels_second_2, rightWheels_second_s, d1.rightStick.y * multiplier);
 
   //Serial.println(d1.selectedClaw);
   configureMotorBoolean(liftFirst_1, liftFirst_2, d1.buttonLB, d1.buttonLT);
